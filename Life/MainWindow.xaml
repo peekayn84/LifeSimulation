@@ -1,0 +1,74 @@
+﻿<Window x:Class="Life.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Life"
+        mc:Ignorable="d"
+        FontSize="14"
+        FontFamily="Comic Sans MS"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="MainWindow" Height="900"  Width="1200">
+    <Grid Background="#FFE3F5" >
+        <Border MinWidth="400" Margin="15" Background="#FFD2EE" VerticalAlignment="Center" Padding="40" CornerRadius="20" >
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="60" Color="LightGray" ShadowDepth="0">
+                </DropShadowEffect>
+            </Border.Effect>
+            <StackPanel >
+                
+                <Image x:Name="mainImage" Height="400" MouseDown="mainImage_MouseDown_1"/>
+                <Grid x:Name="grindTable">
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition Height="0"/>
+                        <RowDefinition Height="0"/>
+                        <RowDefinition Height="0"/>
+                        <RowDefinition Height="0"/>
+                        <RowDefinition Height="0"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0" Grid.Row="0" x:Name="startButton" Content="Start" Margin="10"   Cursor="Hand" />
+                    <Button Grid.Column="1" Grid.Row="0" x:Name="stopButton" Content="Stop" Margin="10" Cursor="Hand" />
+                    <ComboBox x:Name="typeComboBox" Grid.Column="2" Grid.Row="0"  Text="Type" AutomationProperties.HelpText="Type" Margin="10" />
+                    <TextBox x:Name="sizeTextBox" Grid.Column="3" Text="100" Grid.Row="0" materialDesign:HintAssist.Hint="Size" Margin="10" Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+                    <TextBox x:Name="xTextBox" Grid.Column="4" Text="15" Grid.Row="0" materialDesign:HintAssist.Hint="X" Margin="10" Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+                    <TextBox x:Name="yTextBox" Grid.Column="5" Text="10" Grid.Row="0" materialDesign:HintAssist.Hint="Y" Margin="10" Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+                    <TextBox x:Name="minNeighborToGenerateLiveTextBox" Text="2" Grid.Column="0" Grid.Row="1" materialDesign:HintAssist.Hint="Min Neighbor To Generate Live" Margin="10" Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+                    <TextBox x:Name="maxNeighborToGenerateLiveTextBox" Text="3" Grid.Column="1"  Grid.Row="1" materialDesign:HintAssist.Hint="Max Neighbor To Generate Live" Margin="10" Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+                    <TextBox x:Name="minNeighborToContinueLiveTextBox" Text="2" Grid.Column="2" Grid.Row="1" materialDesign:HintAssist.Hint="Min Neighbor To Continue Live" Margin="10" Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+                    <TextBox x:Name="maxNeighborToContinueLiveTextBox" Text="5" Grid.Column="3"  Grid.Row="1" materialDesign:HintAssist.Hint="Max Neighbor To Continue Live" Margin="10" Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+                    <TextBox x:Name="persentToGenerateNewLifeTextBox" Text="100" Grid.Column="4" Grid.ColumnSpan="2"  Grid.Row="1" materialDesign:HintAssist.Hint="Persent To Generate New Life" Margin="10" Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+                    <TextBox x:Name="persentToContinueLifeTextBox" Text="100" Grid.Column="0" Grid.Row="2" materialDesign:HintAssist.Hint="Persent To Continue Life" Margin="10" Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+                    <TextBox x:Name="persentToInfectedFromAirTextBox" Text="10" Grid.Column="1" Grid.Row="2" materialDesign:HintAssist.Hint="Persent To Infected From Air" Margin="10" Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+                    <TextBox x:Name="persentToInfectedNeighborTextBox" Text="50" Grid.Column="2" Grid.Row="2" materialDesign:HintAssist.Hint="Persent To Infected Neighbor" Margin="10" Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+                    <TextBox x:Name="persentToInfectedDieTextBox" Text="25" Grid.Column="3" Grid.Row="2" materialDesign:HintAssist.Hint="Persent To Infected Die" Margin="10" Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+                    <TextBox x:Name="persentToInfectedAliveTextBox" Text="50" Grid.Column="4" Grid.ColumnSpan="2" Grid.Row="2" materialDesign:HintAssist.Hint="Persent To Infected Alive" Margin="10" Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+
+                    <TextBox x:Name="moveTextBox" Text="100" Grid.Column="0" Grid.Row="3" materialDesign:HintAssist.Hint="Persent To Move" Margin="10" Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+                    <CheckBox x:Name="wolfChildCheckBox" Grid.Column="1" Grid.Row="3" IsThreeState="False" IsChecked="True" Height="20" Content="Wolf will have child" />
+                    <TextBox x:Name="wolfHealthTextBox" Text="20" Grid.Column="2" Grid.Row="3" materialDesign:HintAssist.Hint="Wolf Health" Margin="10" Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+                    <TextBox x:Name="wolfTeenagerTextBox" Text="5" Grid.Column="3"  Grid.Row="3" materialDesign:HintAssist.Hint="Time to make adult wolf" Margin="10" Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+                    <TextBox x:Name="wolfTeenagerPersentTextBox" Text="20" Grid.Column="4"   Grid.Row="3" Grid.ColumnSpan="2" materialDesign:HintAssist.Hint="Persent to make new wolf" Margin="10" Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+                    <TextBox x:Name="rabbitHealthTextBox" Text="20" Grid.Column="0" Grid.Row="4" Grid.ColumnSpan="2" materialDesign:HintAssist.Hint="Rabbit health" Margin="10" Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+                    <TextBox x:Name="rabbitTeenagerTextBox" Text="5" Grid.Column="2" Grid.Row="4" Grid.ColumnSpan="2" materialDesign:HintAssist.Hint="Time to make adult rabbit" Margin="10" Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+                    <TextBox x:Name="rabbitTeenagerPersentTextBox" Text="50" Grid.Column="4" Grid.Row="4" Grid.ColumnSpan="2" materialDesign:HintAssist.Hint="Persent to make new rabbit" Margin="10" Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+
+                </Grid>
+                <Image x:Name="graphImage" Height="200" MouseDown="mainImage_MouseDown_1"/>
+                <Button  x:Name="debugButton"  Content="One Step" Margin="0 10 0 0" Cursor="Hand" />
+            </StackPanel>
+            
+        </Border>
+        
+
+
+    </Grid>
+</Window>
