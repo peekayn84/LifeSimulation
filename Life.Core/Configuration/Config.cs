@@ -4,6 +4,7 @@ namespace Life.Core.Configuration {
     /// The "Chance" word means the param is measured in percents
     ///</summary>
     public class Config {
+        // Field settings
         ///<summary>
         /// Field columns count.
         /// Default = 15
@@ -62,9 +63,11 @@ namespace Life.Core.Configuration {
         ///</summary>
         public int MaxAge { get; set; } = 100;
         ///<summary>
-        /// ???
+        /// The number of cells as far as a person sees around him.
+        /// Used when choosing a direction.
+        /// Default = 3
         ///</summary>
-        public int radiusVision { get; set; } = 3;
+        public int VisionRadius { get; set; } = 3;
 
         // House settings
         ///<summary>
@@ -78,14 +81,12 @@ namespace Life.Core.Configuration {
         ///</summary>
         public int MaxHouseCapacity { get; set; } = 20;
 
-        //Создать дома(с параметрами) и клетки(с параметрами)
-
         // Virus settings
         ///<summary>
         /// The chance person gets a virus through air.
         /// Default = 1
         ///</summary>
-        public int ChanceToInfectThroughAir { get; set; } = 1;
+        public int ChanceToGetInfectedWithAir { get; set; } = 1;
         ///<summary>
         /// The chance to infect neightbour person.
         /// If there are 2 infected neighbours, the chance adds up.
@@ -93,13 +94,15 @@ namespace Life.Core.Configuration {
         ///</summary>
         public int ChanceToInfectNeighbour { get; set; } = 50;
         ///<summary>
-        /// ???
+        /// Chance to be infected by a person(infected) that wears mask.
+        /// Default = 25
         ///</summary>
-        public int percentMaskInfectedWeak { get; set; } = 25;
+        public int ChanceToInfectWhenInMask { get; set; } = 25;
         ///<summary>
-        /// ???
+        /// Chance to be infected when a person(healthy) wears mask.
+        /// Default = 15
         ///</summary>
-        public int percentMaskHealthyWeak { get; set; } = 15;
+        public int ChanceToBeInfectedWhenInMask { get; set; } = 15;
         ///<summary>
         /// The initial chance the person starts to recover from virus.
         /// Updated after each move.
@@ -112,9 +115,10 @@ namespace Life.Core.Configuration {
         ///</summary>
         public int ChanceToCreateVirusOnDeath { get; set; } = 50;
         ///<summary>
-        /// ???
+        /// How much moves will the virus live in its cell.
+        /// Default = 3
         ///</summary>
-        public int virusCellRemoveAfterDie { get; set; } = 3;
+        public int MovesToVirusLive { get; set; } = 3;
 
         // Vaccine settings
         ///<summary>
