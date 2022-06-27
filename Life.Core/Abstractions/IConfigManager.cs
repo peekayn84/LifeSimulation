@@ -9,12 +9,12 @@ namespace Life.Core.Abstractions
         ///<summary>
         /// Configuration
         ///</summary>
-        TConfig Configuration { get; }
+        TConfig? Configuration { get; }
 
         ///<summary>
         /// Method that asynchronously reads configuration in specific format and returns
         /// specific configuration type
         ///</summary>
-        Task<TConfig> LoadConfig();
+        Task<TConfig?> LoadConfig();
     }
 }

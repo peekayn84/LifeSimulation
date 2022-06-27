@@ -118,7 +118,7 @@ namespace Life.Core.Configuration {
         /// How much moves will the virus live in its cell.
         /// Default = 3
         ///</summary>
-        public int MovesToVirusLive { get; set; } = 3;
+        public int MovesToVirusDeath { get; set; } = 3;
 
         // Vaccine settings
         ///<summary>

@@ -1,6 +1,6 @@
 ﻿namespace Life.Core.Models
 {
-    public class Food : CellBase
+    public sealed class Food : CellBase
     {
         public int Saturation { get; set; }
         public bool IsVaccine { get; set; }

@@ -2,9 +2,9 @@ namespace Life.Core.Abstractions
 {
     public abstract class CellBase : ICell
     {
-        int X { get; set; }
-        int Y { get; set; }
-        int VisualType { get; set; }
+        public int X { get; set; }
+        public int Y { get; set; }
+        public int VisualType { get; set; }
 
         public CellBase(int x, int y, int visualType)
         {

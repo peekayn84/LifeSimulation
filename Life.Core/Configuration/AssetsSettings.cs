@@ -1,4 +1,4 @@
-namespace Life
+namespace Life.Core.Configuration
 {
     ///<summary>
     /// Settings for managing UI assets

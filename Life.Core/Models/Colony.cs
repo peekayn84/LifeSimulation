@@ -1,33 +1,38 @@
-﻿using System;
+﻿using Life.Core.Configuration;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Life.Core.Models
 {
-    class Colony
+    public sealed class Colony
     {
-        Random rnd = new Random();
-        public int xCount;
-        public int yCount;
-        public List<Person> people;
-        public List<Food> foods;
-        public List<House> houses;
-        public List<Virus> viruses;
-        public List<Virus> virusesToRemove;
-        public List<Person> peopleToRemove;
+        private readonly Random _random;
+        private readonly Config _config;
 
-        struct NearObject{
+        // private int _debug = 0;
+
+        public int ColumnsCount { get; }
+        public int RowsCount { get; }
+
+        public List<Person> People { get; }
+        public List<Food> FoodItems { get; }
+        public List<House> Houses { get; }
+        public List<Virus> Viruses { get; }
+        public List<Virus> VirusesToRemove { get; }
+        public List<Person> PeopleToRemove { get; }
+
+        struct NearbyObject
+        {
             public int X { get; set; }
             public int Y { get; set; }
             public int DirectionX { get; set; }
             public int DirectionY { get; set; }
             public int Distance { get; set; }
             public int Type { get; set; }
-            public NearObject(int x,int y, int directionX, int directionY, int distance, int type)
+
+            public NearbyObject(int x, int y, int directionX, int directionY, int distance, int type)
             {
                 X = x;
                 Y = y;
@@ -38,165 +43,112 @@ namespace Life.Core.Models
             }
         }
 
-        public Colony(int xCount, int yCount)
+        public Colony(int columnsCount, int rowsCount, IConfigManager<Config> configManager)
         {
-            this.xCount = xCount;
-            this.yCount = yCount;
-           people = new List<Person>();
-            foods = new List<Food>();
-            houses = new List<House>();
-            peopleToRemove = new List<Person>();
-            virusesToRemove = new List<Virus>();
-            viruses = new List<Virus>();
+            if(configManager.Configuration == null)
+            {
+                throw new Exception("Configuration was null.");
+            }
 
+            _random = new Random();
+            _config = configManager.Configuration;
+
+            ColumnsCount = columnsCount;
+            RowsCount = rowsCount;
+            People = new List<Person>();
+            FoodItems = new List<Food>();
+            Houses = new List<House>();
+            PeopleToRemove = new List<Person>();
+            VirusesToRemove = new List<Virus>();
+            Viruses = new List<Virus>();
         }
+
         public Colony(Colony other)
         {
-            this.xCount = other.xCount;
-            this.yCount = other.yCount;
-            people = new List<Person>(other.people);
-            foods = new List<Food>(other.foods);
-            houses = new List<House>(other.houses);
-            peopleToRemove = new List<Person>(other.peopleToRemove);
-            virusesToRemove = new List<Virus>(other.virusesToRemove);
-            viruses = new List<Virus>(other.viruses);
+            _random = new Random();
+            _config = other._config;
 
+            ColumnsCount = other.ColumnsCount;
+            RowsCount = other.RowsCount;
+            People = new List<Person>(other.People);
+            FoodItems = new List<Food>(other.FoodItems);
+            Houses = new List<House>(other.Houses);
+            PeopleToRemove = new List<Person>(other.PeopleToRemove);
+            VirusesToRemove = new List<Virus>(other.VirusesToRemove);
+            Viruses = new List<Virus>(other.Viruses);
         }
-        public void addPeople( int x, int y, int health, int feed, int old, int visualType, int virusStrength, bool virusGoDown, bool hasMask, int vaccineProtection, bool atHouse)
+
+        public void AddPerson(
+            int x,
+            int y,
+            int health,
+            int saturation,
+            int age,
+            int visualType,
+            int virusStrength,
+            bool virusGoDown,
+            bool hasMask,
+            int vaccineProtection,
+            bool atHouse)
         {
-
-            people.Add(new Person( x,  y,  health,  feed,  old,  visualType,  virusStrength,  virusGoDown,  hasMask,  vaccineProtection,  atHouse));
+            People.Add(new Person(x, y, health, saturation, age, visualType, virusStrength, virusGoDown, hasMask, vaccineProtection, atHouse));
         }
-        public void addPeopleByCoord(int x, int y)
+
+        public void AddPeopleByCoord(int x, int y)
         {
-            int visualType = rnd.Next(0, Settings.visualManCount);
-            people.Add(new People(x, y, Settings.healthCellDefault, Settings.feedCellDefault, Settings.ageCellDefault, visualType, 0, false, false, 0, false));
+            int visualType = _random.Next(0, AssetsSettings.PersonIconsCount);
+            AddPerson(
+                x,
+                y,
+                _config.PersonDefaultHealth,
+                _config.PersonDefaultSaturation,
+                _config.PersonDefaultAge,
+                visualType,
+                virusStrength: 0,
+                virusGoDown: false,
+                hasMask: false,
+                vaccineProtection: 0,
+                atHouse: false
+            );
         }
-        public int countType(int type)
+
+        public int CountType(int type) => type switch
         {
-            int result = 0;
-            if (type == 8)
-            {
-                foreach (Virus virus in viruses)
-                {
-                    result++;
-                }
-            }
-            else if (type == 4)
-            {
-                foreach (House house in houses)
-                {
+            8 => Viruses.Count,
+            4 => Houses.Count((h) => h.CurrentCapacity < h.MaxCapacity),
+            6 => Houses.Count((h) => h.CurrentCapacity >= h.MaxCapacity),
+            3 => FoodItems.Count((f) => f.IsVaccine),
+            2 => FoodItems.Count((f) => !f.IsVaccine),
+            -1 => People.Count,
+            7 => People.Count((p) => p.VirusStrength > 0 && p.HasMask),
+            5 => People.Count((p) => p.VirusStrength > 0 && !p.HasMask),
+            1 => People.Count((p) => p.VirusStrength <= 0),
+            _ => throw new Exception($"Invalid type value: {type}")
+        };
 
-                    if (house.CurentCells < house.MaxCells)
-                    {
-                        result++;
-                    }
-
-
-                }
-            }
-            else if (type == 6)
-            {
-                foreach (House house in houses)
-                {
-
-                    if (house.CurentCells >= house.MaxCells)
-                    {
-                        result++;
-                    }
-
-
-
-                }
-            }
-            else if ((type == 7) || (type == 5) || (type == 1) || (type == -1))
-            {
-                foreach (Person person in people)
-                {
-                    if (type == -1)
-                    {
-                        result++;
-                    }
-
-
-                    if (person.VirusStrength > 0)
-                    {
-
-                        if (person.HasMask)
-                        {
-
-                            if (type == 7)
-                            {
-                                result++;
-                            }
-                        }
-                        else
-                        {
-                            if (type == 5)
-                            {
-                                result++;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (type == 1)
-                        {
-                            result++;
-                        }
-                    }
-
-
-                }
-            }
-            else if ((type == 3) || (type == 2))
-            {
-                foreach (Food food in foods)
-                {
-
-                    if (food.Vaccine)
-                    {
-                        if (type == 3)
-                        {
-                            result++;
-                        }
-                    }
-                    else
-                    {
-                        if (type == 2)
-                        {
-                            result++;
-                        }
-                    }
-
-
-                }
-            }
-
-
-
-
-            return result;
-        }
-        public void addPeopleRandom()
+        public void RandomlyAddPeople()
         {
             int x = 0;
             int y = 0;
             bool find = true;
+
             while (find)
             {
-                x=rnd.Next(0,xCount);
-                y=rnd.Next(0,yCount);
+                x = _random.Next(0, ColumnsCount);
+                y = _random.Next(0, RowsCount);
                 find = false;
-                foreach(Food food in foods)
+
+                foreach (Food food in FoodItems)
                 {
 
-                    if ((food.X == x)&& (food.Y == y)){
+                    if ((food.X == x) && (food.Y == y))
+                    {
                         find = true;
                         break;
                     }
                 }
-                foreach (House house in houses)
+
+                foreach (House house in Houses)
                 {
 
                     if ((house.X == x) && (house.Y == y))
@@ -206,147 +158,144 @@ namespace Life.Core.Models
                     }
                 }
             }
-            int health = rnd.Next(1, Settings.healthCellDefault);
-            int feed = rnd.Next(1, Settings.feedCellDefault);
-            int old = rnd.Next(Settings.ageTillChild, Settings.ageAfterOld);
-            int visualType = rnd.Next(0, Settings.visualManCount);
-            bool hasMask = false;
-            if (getRealRandomByPersent(50))
-            {
-                hasMask = true;
-            }
-            people.Add(new Person( x, y, health, feed, old, visualType, 0, false, hasMask, 0, false));
+
+            int health = _random.Next(1, _config.PersonDefaultHealth);
+            int saturation = _random.Next(1, _config.PersonDefaultSaturation);
+            int age = _random.Next(_config.AdultAge, _config.OldAge);
+            int visualType = _random.Next(0, AssetsSettings.PersonIconsCount);
+            bool hasMask = GetRealRandomByPersent(50);
+
+            AddPerson(
+                x,
+                y,
+                health,
+                saturation,
+                age,
+                visualType,
+                virusStrength: 0,
+                virusGoDown: false,
+                hasMask: false,
+                vaccineProtection: 0,
+                atHouse: false
+            );
         }
-        public void addChildByCoord(int x,int y)
+
+        public void AddChildByCoord(int x, int y)
         {
+            int visualType = _random.Next(0, AssetsSettings.PersonIconsCount);
+            bool hasMask = GetRealRandomByPersent(50);
+
+            AddPerson(
+               x,
+               y,
+               _config.PersonDefaultHealth,
+               _config.PersonDefaultSaturation,
+               age: 0,
+               visualType,
+               virusStrength: 0,
+               virusGoDown: false,
+               hasMask: false,
+               vaccineProtection: 0,
+               atHouse: false
+           );
+        }
+
+        public void AddVirusByCoord(int x, int y, int health)
+        {
+            Viruses.Add(new Virus(x, y, health));
+        }
+
+        public void RemoveVirusByCoord(int x, int y)
+        {
+            var target = Viruses.FirstOrDefault((v) => IsInTheCell(v, x, y));
+            if (target != null)
+            {
+                Viruses.Remove(target);
+            }
+        }
+
+        public void RemoveFoodByCoord(int x, int y)
+        {
+            var target = FoodItems.FirstOrDefault((f) => IsInTheCell(f, x, y));
+            if (target != null)
+            {
+                FoodItems.Remove(target);
+            }
+        }
+
+        public void RemovePersonByCoord(int x, int y)
+        {
+            var target = People.FirstOrDefault((p) => IsInTheCell(p, x, y));
+            if (target != null)
+            {
+                People.Remove(target);
+            }
+        }
+
+        public void RemoveHouseByCoord(int x, int y)
+        {
+            var target = Houses.FirstOrDefault((h) => IsInTheCell(h, x, y));
+            if (target != null)
+            {
+                Houses.Remove(target);
+            }
+        }
 
 
-            int visualType = rnd.Next(0, Settings.visualManCount);
-            bool hasMask = false;
-            if (getRealRandomByPersent(50))
-            {
-                hasMask = true;
-            }
-            people.Add(new People(x, y, Settings.healthCellDefault, Settings.feedCellDefault, 0, visualType, 0,false, hasMask, 0, true));
-        }
-        public void addVirusByCoord(int x, int y, int removeTime)
+        public int GetPersonIdxByCoord(int x, int y)
         {
-            viruses.Add(new Virus(x, y, removeTime));
+            return People.FindIndex((p) => IsInTheCell(p, x, y));
         }
-        public void removeVirusByCoord(int x, int y)
-        {
-            for (int i = 0; i < viruses.Count; i++)
-            {
-                if ((viruses[i].X == x) && (viruses[i].Y == y))
-                {
-                    viruses.RemoveAt(i);
-                    break;
-                }
-            }
-        }
-        public void removePersonByCoord(int x, int y)
-        {
-            for (int i = 0; i < people.Count; i++)
-            {
-                if ((people[i].X == x) && (people[i].Y == y))
-                {
-                    people.RemoveAt(i);
-                    break;
-                }
-            }
-        }
-        public int getIdPersonByCoord(int x, int y)
-        {
-            for (int i = 0; i < people.Count; i++)
-            {
-                if ((people[i].X == x) && (people[i].Y == y))
-                {
-                    return i;
-                }
-            }
-            return -1;
-        }
-        public void addFoodByCoord(int x, int y, bool vaccine)
+
+        public void AddFoodByCoord(int x, int y, bool vaccine)
         {
             int visualType = 0;
             if (!vaccine)
             {
-                visualType = rnd.Next(0, Settings.visualFoodCount);
+                visualType = _random.Next(0, AssetsSettings.FoodIconsCount);
             }
-            int tempFoodAdd = rnd.Next(Settings.minFoodAdd, Settings.maxFoodAdd + 1);
-            foods.Add(new Food(x, y, tempFoodAdd, vaccine, visualType));
-
-
+            int tempFoodAdd = _random.Next(_config.MinFoodIncrement, _config.MaxFoodIncrement + 1);
+            FoodItems.Add(new Food(x, y, tempFoodAdd, vaccine, visualType));
         }
-        public void addHouseByCoord(int x, int y)
+
+        public void AddHouseByCoord(int x, int y)
         {
-            int visualType = rnd.Next(0, Settings.visualHouseCount);
-            int sizeHouse=rnd.Next(Settings.minSizeHouse, Settings.maxSizeHouse+1);
-            houses.Add(new House(x, y, visualType, sizeHouse, 0));
-
-
+            int visualType = _random.Next(0, AssetsSettings.HouseIconsCount);
+            int sizeHouse = _random.Next(_config.MinHouseCapacity, _config.MaxHouseCapacity + 1);
+            Houses.Add(new House(x, y, visualType, sizeHouse, 0));
         }
-        public void removeHouseByCoord(int x, int y)
-        {
-            for (int i = 0; i < houses.Count; i++)
-            {
-                if ((houses[i].X == x) && (houses[i].Y == y))
-                {
-                    houses.RemoveAt(i);
-                    break;
-                }
-            }
-        }
-        public void changeCurentCellForHouse(int x, int y, int deltaCellCount)
+
+        public void ChangeCurentCellForHouse(int x, int y, int deltaCellCount)
         {
             Debug.WriteLine(deltaCellCount);
-            for (int i = 0; i < houses.Count; i++)
+            var target = Houses.FirstOrDefault((h) => IsInTheCell(h, x, y));
+            if (target != null)
             {
-                if ((houses[i].X == x) && (houses[i].Y == y))
-                {
-                    houses[i].CurentCells = houses[i].CurentCells+deltaCellCount;
-                    break;
-                }
+                target.CurrentCapacity += deltaCellCount;
             }
         }
-        public int countCellsReadyToGenerateNewLifeForHouse(int x, int y)
-        {
-            int count = 0;
-            for (int i = 0; i < people.Count; i++)
-            {
-                if ((people[i].X == x) && (people[i].Y == y) && (people[i].AtHouse) && (people[i].Age<Settings.ageAfterOld) && (people[i].Age > Settings.ageTillChild))
-                {
-                    count++;
-                }
-            }
-            return count;
-        }
-        public bool getRealRandomByPersent(int persent)
+
+        public int CountCellsReadyToGenerateNewLifeForHouse(int x, int y)
+            => People.Count((p) => IsPersonReadyToGenerateNewLife(p, x, y));
+
+        private bool IsPersonReadyToGenerateNewLife(Person p, int x, int y)
+            => p.X == x
+            && p.Y == y
+            && p.AtHouse
+            && p.Age < _config.OldAge
+            && p.Age > _config.AdultAge;
+
+        private static bool IsInTheCell(CellBase cell, int x, int y)
+            => cell.X == x && cell.Y == y;
+
+        public bool GetRealRandomByPersent(int percent)
         {
             DateTime dt = DateTime.Now;
             int tempPersent = (int)(dt.Ticks % 101);
             //Debug.WriteLine(tempPersent.ToString() + " " + persent.ToString());
-            if (tempPersent <= persent)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return tempPersent <= percent;
+        }
 
-        }
-        public void removeFoodByCoord(int x, int y)
-        {
-            for(int i = 0; i < foods.Count; i++)
-            {
-                if ((foods[i].X == x) && (foods[i].Y == y))
-                {
-                    foods.RemoveAt(i);
-                    break;
-                }
-            }
-        }
         //0-Nothing
         //1-Person
         //2-Food
@@ -356,141 +305,88 @@ namespace Life.Core.Models
         //6-Full House
         //7-Infected person with mask
         //8-Virus
-        public int getTypeByCoord(int x, int y)
+        public int GetTypeByCoord(int x, int y)
         {
-            foreach (Virus virus in viruses)
-            {
-                if ((virus.X == x) && (virus.Y == y))
-                {
-                    return 8;
+            if (Viruses.Any((v) => IsInTheCell(v, x, y))) return 8;
+            if (Houses.Any((h) => IsInTheCell(h, x, y) && h.CurrentCapacity < h.MaxCapacity)) return 4;
+            if (Houses.Any((h) => IsInTheCell(h, x, y) && h.CurrentCapacity >= h.MaxCapacity)) return 6;
+            if (People.Any((p) => IsInTheCell(p, x, y) && p.VirusStrength > 0 && p.HasMask)) return 7;
+            if (People.Any((p) => IsInTheCell(p, x, y) && p.VirusStrength > 0 && !p.HasMask)) return 5;
+            if (People.Any((p) => IsInTheCell(p, x, y) && p.VirusStrength <= 0)) return 1;
+            if (FoodItems.Any((f) => IsInTheCell(f, x, y) && f.IsVaccine)) return 3;
+            if (FoodItems.Any((f) => IsInTheCell(f, x, y))) return 2;
 
-                }
-            }
-            foreach (House house in houses)
-            {
-                if ((house.X == x) && (house.Y == y))
-                {
-                    if (house.CurentCells<house.MaxCells)
-                    {
-                        return 4;
-                    }
-                    else
-                    {
-                        return 6;
-                    }
-
-                }
-            }
-            foreach (Person person in people)
-            {
-                if ((person.X == x) && (person.Y == y))
-                {
-
-                    if (person.VirusStrength > 0)
-                    {
-
-                        if (person.HasMask)
-                        {
-
-                            return 7;
-                        }
-                        else
-                        {
-                            return 5;
-                        }
-                    }
-                    else
-                    {
-                        return 1;
-                    }
-
-                }
-            }
-            foreach (Food food in foods)
-            {
-                if ((food.X == x) && (food.Y == y))
-                {
-                    if (food.Vaccine)
-                    {
-                        return 3;
-                    }
-                    else
-                    {
-                        return 2;
-                    }
-
-                }
-            }
             return 0;
         }
-        int debug = 0;
-        bool moveToType(int idPerson, int type, List<NearObject> nearObjects)
+
+        bool MoveToType(int personId, int type, List<NearbyObject> nearbyObjects)
         {
             bool moved = false;
             int idMinDistance = 0;
-            int minDistance = Settings.radiusVision + 1;
-            for (int i1 = 0; i1 < nearObjects.Count; i1++)
+            int minDistance = _config.VisionRadius + 1;
+
+            for (int i1 = 0; i1 < nearbyObjects.Count; i1++)
             {
-                if ((nearObjects[i1].Distance < minDistance) && (nearObjects[i1].Type == type))
+                if ((nearbyObjects[i1].Distance < minDistance) && (nearbyObjects[i1].Type == type))
                 {
                     idMinDistance = i1;
-                    minDistance = nearObjects[i1].Distance;
-
+                    minDistance = nearbyObjects[i1].Distance;
                 }
-
             }
+
             //Debug.WriteLine("Go to " + nearObjects[idMinDistance].DirectionX.ToString() + " " + nearObjects[idMinDistance].DirectionY.ToString());
-            int newX = people[idPerson].X + nearObjects[idMinDistance].DirectionX;
-            int newY = people[idPerson].Y + nearObjects[idMinDistance].DirectionY;
-            int typeToGo = getTypeByCoord(newX, newY);
-            if ((typeToGo != 1)&&(typeToGo != 5) && (typeToGo != 7))
+            int newX = People[personId].X + nearbyObjects[idMinDistance].DirectionX;
+            int newY = People[personId].Y + nearbyObjects[idMinDistance].DirectionY;
+            int typeToGo = GetTypeByCoord(newX, newY);
+            if ((typeToGo != 1) && (typeToGo != 5) && (typeToGo != 7))
             {
 
                 if ((typeToGo == 4) && (type == 4))
                 {
-                    changeCurentCellForHouse(newX, newY,1);
-                    people[idPerson].AtHouse = true;
+                    ChangeCurentCellForHouse(newX, newY, 1);
+                    People[personId].AtHouse = true;
                 }
                 else if ((typeToGo == 3) && (type == 3))
                 {
-                    people[idPerson].VaccineProtection = Settings.persentVaccineProtection;
-                    removeFoodByCoord(newX, newY);
+                    People[personId].VaccineProtection = _config.InitialVaccinePower;
+                    RemoveFoodByCoord(newX, newY);
                 }
                 else if ((typeToGo == 2) && (type == 2))
                 {
-                    people[idPerson].Saturation = Settings.feedCellDefault;
-                    removeFoodByCoord(newX, newY);
+                    People[personId].Saturation = _config.PersonDefaultSaturation;
+                    RemoveFoodByCoord(newX, newY);
                 }
                 else if (typeToGo == 8)
                 {
-                    removeVirusByCoord(newX, newY);
-                    people[idPerson].VirusStrength=1;
+                    RemoveVirusByCoord(newX, newY);
+                    People[personId].VirusStrength = 1;
                 }
-                people[idPerson].X = newX;
-                people[idPerson].Y = newY;
+
+                People[personId].X = newX;
+                People[personId].Y = newY;
                 moved = true;
             }
 
-
             return moved;
         }
-        bool moveRandom(int idPerson)
+
+        bool MoveRandom(int idPerson)
         {
             int counter = 0;
             while (true)
             {
-                int newX = people[idPerson].X + (rnd.Next(3) - 1);
-                int newY = people[idPerson].Y + (rnd.Next(3) - 1);
-                int typeToGo = getTypeByCoord(newX, newY);
-                if (((typeToGo == 0)|| (typeToGo == 8)) && (newX>0)&&(newX<xCount)&&(newY>0)&&(newY<yCount))
+                int newX = People[idPerson].X + (_random.Next(3) - 1);
+                int newY = People[idPerson].Y + (_random.Next(3) - 1);
+                int typeToGo = GetTypeByCoord(newX, newY);
+                if (((typeToGo == 0) || (typeToGo == 8)) && (newX > 0) && (newX < ColumnsCount) && (newY > 0) && (newY < RowsCount))
                 {
                     if (typeToGo == 8)
                     {
-                        removeVirusByCoord(newX, newY);
-                        people[idPerson].VirusStrength = 1;
+                        RemoveVirusByCoord(newX, newY);
+                        People[idPerson].VirusStrength = 1;
                     }
-                    people[idPerson].X = newX;
-                    people[idPerson].Y = newY;
+                    People[idPerson].X = newX;
+                    People[idPerson].Y = newY;
                     return true;
                 }
                 counter++;
@@ -499,86 +395,92 @@ namespace Life.Core.Models
                     return false;
                 }
             }
-
-            return false;
         }
+
         public Colony Clone()
         {
             return new Colony(this);
         }
-        public void updateColony()
+
+        public void UpdateColony()
         {
-            for (int i = 0; i < houses.Count; i++)
+            for (int i = 0; i < Houses.Count; i++)
             {
-                int coutTryToGenerateNewLife = countCellsReadyToGenerateNewLifeForHouse(houses[i].X, houses[i].Y) / Settings.countCellToChild;
+                int coutTryToGenerateNewLife = CountCellsReadyToGenerateNewLifeForHouse(Houses[i].X, Houses[i].Y) / _config.PeopleToCreatePersonCount;
                 //Debug.WriteLine("q"+ coutTryToGenerateNewLife.ToString());
                 if (coutTryToGenerateNewLife >= 1)
                 {
                     while (coutTryToGenerateNewLife != 0)
                     {
                         coutTryToGenerateNewLife = coutTryToGenerateNewLife - 1;
-                        if ((getRealRandomByPersent(Settings.percentChild))&& (houses[i].CurentCells < houses[i].MaxCells))
+                        if ((GetRealRandomByPersent(_config.PersonCreateChance)) && (Houses[i].CurrentCapacity < Houses[i].MaxCapacity))
                         {
                             Debug.WriteLine("Add child");
-                            addChildByCoord(houses[i].X, houses[i].Y);
-                            houses[i].CurentCells++;
+                            AddChildByCoord(Houses[i].X, Houses[i].Y);
+                            Houses[i].CurrentCapacity++;
                         }
                     }
                 }
             }
-            for(int i = 0; i < people.Count(); i++)
+
+            for (int i = 0; i < People.Count(); i++)
             {
-                if (people[i].Age > Settings.ageTillChild)
+                if (People[i].Age > _config.AdultAge)
                 {
-                    if (people[i].AtHouse)
+                    if (People[i].AtHouse)
                     {
-                        int persentToGoToFood = (int)(100 - (people[i].Saturation * 1.0 / Settings.feedCellDefault * 100));
+                        int persentToGoToFood = (int)(100 - (People[i].Saturation * 1.0 / _config.PersonDefaultSaturation * 100));
 
                         //Debug.WriteLine(persentToGoToFood);
-                        if (getRealRandomByPersent(persentToGoToFood))
+                        if (GetRealRandomByPersent(persentToGoToFood))
                         {
-                            int xHouse = people[i].X;
-                            int yHouse = people[i].Y;
-                            bool exited = moveRandom(i);
+                            int xHouse = People[i].X;
+                            int yHouse = People[i].Y;
+                            bool exited = MoveRandom(i);
+
                             if (exited)
                             {
-                                people[i].AtHouse = false;
-                                changeCurentCellForHouse(xHouse, yHouse, -1);
+                                People[i].AtHouse = false;
+                                ChangeCurentCellForHouse(xHouse, yHouse, -1);
                             }
                         }
 
                     }
                     else
                     {
-                        if (getRealRandomByPersent(Settings.movePercent))
+                        if (GetRealRandomByPersent(_config.PersonMoveChance))
                         {
 
                             bool moved = false;
-                            if (Settings.radiusVision > 0)
+                            if (_config.VisionRadius > 0)
                             {
-                                List<NearObject> nearObjects = new List<NearObject>();
+                                List<NearbyObject> nearObjects = new List<NearbyObject>();
                                 bool findFood = false;
                                 bool findVaccine = false;
                                 bool findHouse = false;
                                 int minXVision = 0;
-                                if (people[i].X - Settings.radiusVision > 0)
+
+                                if (People[i].X - _config.VisionRadius > 0)
                                 {
-                                    minXVision = people[i].X - Settings.radiusVision;
+                                    minXVision = People[i].X - _config.VisionRadius;
                                 }
+
                                 int minYVision = 0;
-                                if (people[i].Y - Settings.radiusVision > 0)
+                                if (People[i].Y - _config.VisionRadius > 0)
                                 {
-                                    minYVision = people[i].Y - Settings.radiusVision;
+                                    minYVision = People[i].Y - _config.VisionRadius;
                                 }
-                                int maxXVision = xCount;
-                                if (people[i].X + Settings.radiusVision < xCount)
+
+                                int maxXVision = ColumnsCount;
+                                if (People[i].X + _config.VisionRadius < ColumnsCount)
                                 {
-                                    maxXVision = people[i].X + Settings.radiusVision + 1;
+                                    maxXVision = People[i].X + _config.VisionRadius + 1;
                                 }
-                                int maxYVision = yCount;
-                                if (people[i].Y - Settings.radiusVision > 0)
+
+                                int maxYVision = RowsCount;
+                                if (People[i].Y - _config.VisionRadius > 0)
                                 {
-                                    maxYVision = people[i].Y + Settings.radiusVision + 1;
+                                    maxYVision = People[i].Y + _config.VisionRadius + 1;
                                 }
 
 
@@ -586,9 +488,9 @@ namespace Life.Core.Models
                                 {
                                     for (int yTemp = minYVision; yTemp < maxYVision; yTemp++)
                                     {
-                                        if (!((xTemp == people[i].X) && (yTemp == people[i].Y)))
+                                        if (!((xTemp == People[i].X) && (yTemp == People[i].Y)))
                                         {
-                                            int type = getTypeByCoord(xTemp, yTemp);
+                                            int type = GetTypeByCoord(xTemp, yTemp);
                                             if (type != 0)
                                             {
                                                 if (type == 2)
@@ -603,30 +505,34 @@ namespace Life.Core.Models
                                                 {
                                                     findHouse = true;
                                                 }
-                                                NearObject nearObject = new NearObject();
+
+                                                NearbyObject nearObject = new NearbyObject();
                                                 nearObject.X = xTemp;
                                                 nearObject.Y = yTemp;
                                                 nearObject.Type = type;
                                                 nearObject.DirectionX = 0;
-                                                if (xTemp < people[i].X)
+
+                                                if (xTemp < People[i].X)
                                                 {
                                                     nearObject.DirectionX = -1;
                                                 }
-                                                else if (xTemp > people[i].X)
+                                                else if (xTemp > People[i].X)
                                                 {
                                                     nearObject.DirectionX = 1;
                                                 }
+
                                                 nearObject.DirectionY = 0;
-                                                if (yTemp < people[i].Y)
+                                                if (yTemp < People[i].Y)
                                                 {
                                                     nearObject.DirectionY = -1;
                                                 }
-                                                else if (yTemp > people[i].Y)
+                                                else if (yTemp > People[i].Y)
                                                 {
                                                     nearObject.DirectionY = 1;
                                                 }
-                                                int distanceX = Math.Abs(xTemp - people[i].X);
-                                                int distanceY = Math.Abs(yTemp - people[i].Y);
+
+                                                int distanceX = Math.Abs(xTemp - People[i].X);
+                                                int distanceY = Math.Abs(yTemp - People[i].Y);
                                                 if (distanceX > distanceY)
                                                 {
                                                     nearObject.Distance = distanceX;
@@ -645,65 +551,72 @@ namespace Life.Core.Models
                                         }
                                     }
                                 }
-                                int persentToGoToFood = (int)(100 - (people[i].Saturation * 1.0 / Settings.feedCellDefault * 100));
+
+                                int persentToGoToFood = (int)(100 - (People[i].Saturation * 1.0 / _config.PersonDefaultSaturation * 100));
                                 if (findFood)
                                 {
                                     //Debug.WriteLine(persentToGoToFood);
-                                    if (getRealRandomByPersent(persentToGoToFood))
+                                    if (GetRealRandomByPersent(persentToGoToFood))
                                     {
                                         //Debug.WriteLine(debug.ToString() + "Go to food");
                                         //debug++;
-                                        moved = moveToType(i, 2, nearObjects);
+                                        moved = MoveToType(i, 2, nearObjects);
                                     }
                                 }
+
                                 if ((!moved) && (findVaccine))
                                 {
-                                    int persentToGoToVaccine = (int)(100 - (people[i].VaccineProtection * 1.0 / Settings.persentVaccineProtection * 100));
-                                    if (getRealRandomByPersent(persentToGoToVaccine))
+                                    int persentToGoToVaccine = (int)(100 - (People[i].VaccineProtection * 1.0 / _config.InitialVaccinePower * 100));
+                                    if (GetRealRandomByPersent(persentToGoToVaccine))
                                     {
-                                        moved = moveToType(i, 3, nearObjects);
+                                        moved = MoveToType(i, 3, nearObjects);
                                     }
                                 }
+
                                 if ((!moved) && (findHouse))
                                 {
-                                    if (getRealRandomByPersent(100 - persentToGoToFood))
+                                    if (GetRealRandomByPersent(100 - persentToGoToFood))
                                     {
-                                        moved = moveToType(i, 4, nearObjects);
+                                        moved = MoveToType(i, 4, nearObjects);
                                     }
                                 }
-
-
                             }
+
                             if (!moved)
                             {
-                                moveRandom(i);
+                                MoveRandom(i);
                             }
+
                             int persentToInfected = 0;
-                            for(int xTemp = people[i].X-1; xTemp < people[i].X+1; xTemp++)
+                            for (int xTemp = People[i].X - 1; xTemp < People[i].X + 1; xTemp++)
                             {
-                                for (int yTemp = people[i].Y - 1; yTemp < people[i].Y + 1; yTemp++)
+                                for (int yTemp = People[i].Y - 1; yTemp < People[i].Y + 1; yTemp++)
                                 {
-                                    if ((!((xTemp == people[i].X) && (yTemp == people[i].Y)))&&(xTemp>0)&&(xTemp<xCount) && (yTemp > 0) && (yTemp < yCount))
+                                    if ((!((xTemp == People[i].X) && (yTemp == People[i].Y))) && (xTemp > 0) && (xTemp < ColumnsCount) && (yTemp > 0) && (yTemp < RowsCount))
                                     {
-                                        int typeNeighbor=getTypeByCoord(xTemp, yTemp);
+                                        int typeNeighbor = GetTypeByCoord(xTemp, yTemp);
                                         if ((typeNeighbor == 5) || (typeNeighbor == 7))
                                         {
                                             int tempInfected = 0;
                                             if (typeNeighbor == 5)
                                             {
-                                                tempInfected += Settings.percentToInfectedNeighbor;
-                                            }else if(typeNeighbor == 7)
-                                            {
-                                                tempInfected += Settings.percentToInfectedNeighbor-Settings.percentMaskInfectedWeak;
+                                                tempInfected += _config.ChanceToInfectNeighbour;
                                             }
-                                            if (people[i].HasMask)
+                                            else if (typeNeighbor == 7)
                                             {
-                                                tempInfected = tempInfected - Settings.percentMaskHealthyWeak;
+                                                tempInfected += _config.ChanceToInfectNeighbour - _config.ChanceToInfectWhenInMask;
                                             }
-                                            if (people[i].VaccineProtection>0)
+
+                                            if (People[i].HasMask)
                                             {
-                                                tempInfected = tempInfected - people[i].VaccineProtection;
+                                                tempInfected = tempInfected - _config.ChanceToBeInfectedWhenInMask;
                                             }
+
+                                            if (People[i].VaccineProtection > 0)
+                                            {
+                                                tempInfected = tempInfected - People[i].VaccineProtection;
+                                            }
+
                                             if (tempInfected > 0)
                                             {
                                                 persentToInfected += tempInfected;
@@ -712,134 +625,145 @@ namespace Life.Core.Models
                                     }
                                 }
                             }
+
                             if (persentToInfected > 0)
                             {
-                                if (getRealRandomByPersent(persentToInfected))
+                                if (GetRealRandomByPersent(persentToInfected))
                                 {
-                                    people[i].VirusStrength = 1;
+                                    People[i].VirusStrength = 1;
                                 }
                             }
 
                         }
 
                     }
-                    if (people[i].Saturation > 0)
+
+                    if (People[i].Saturation > 0)
                     {
-                        people[i].Saturation--;
+                        People[i].Saturation--;
                     }
                     else
                     {
-                        people[i].Health-=3;
+                        People[i].Health -= 3;
                     }
-                    if (people[i].VaccineProtection > 0)
+
+                    if (People[i].VaccineProtection > 0)
                     {
-                        people[i].VaccineProtection = people[i].VaccineProtection-Settings.protectionVaccineGoDown;
-                        if (people[i].VaccineProtection < 0)
+                        People[i].VaccineProtection = People[i].VaccineProtection - _config.VaccinePowerDecrement;
+                        if (People[i].VaccineProtection < 0)
                         {
-                            people[i].VaccineProtection = 0;
+                            People[i].VaccineProtection = 0;
                         }
                     }
-                    if (people[i].VirusStrength > 0)
+
+                    if (People[i].VirusStrength > 0)
                     {
-                        people[i].Health-= people[i].VirusStrength;
-                        if (people[i].VirusGoDown)
+                        People[i].Health -= People[i].VirusStrength;
+
+                        if (People[i].VirusGoDown)
                         {
-                            people[i].VirusStrength--;
-                            if (people[i].VirusStrength == 0)
+                            People[i].VirusStrength--;
+
+                            if (People[i].VirusStrength == 0)
                             {
-                                people[i].VirusGoDown = false;
+                                People[i].VirusGoDown = false;
                             }
                         }
                         else
                         {
-                            if (getRealRandomByPersent(Settings.percentVirusGoDown))
+                            if (GetRealRandomByPersent(_config.InitialChanceVirusGoDown))
                             {
-                                people[i].VirusGoDown = true;
+                                People[i].VirusGoDown = true;
                             }
-                            people[i].VirusStrength++;
+
+                            People[i].VirusStrength++;
                         }
 
                     }
                     else
                     {
-                        if (getRealRandomByPersent(Settings.percentToInfectedFromAir))
+                        if (GetRealRandomByPersent(_config.ChanceToGetInfectedWithAir))
                         {
-                            people[i].VirusStrength++;
+                            People[i].VirusStrength++;
                         }
                     }
-                    if ((people[i].Saturation > (Settings.feedCellDefault / 2))&& (people[i].VirusStrength==0) && (people[i].Age < Settings.ageAfterOld) && (people[i].Health < Settings.healthCellDefault))
+
+                    if ((People[i].Saturation > (_config.PersonDefaultSaturation / 2)) && (People[i].VirusStrength == 0) && (People[i].Age < _config.OldAge) && (People[i].Health < _config.PersonDefaultHealth))
                     {
-                        people[i].Health++;
+                        People[i].Health++;
                     }
-                    if (people[i].Health <= 0)
+
+                    if (People[i].Health <= 0)
                     {
-                        if (people[i].VirusStrength > 0)
+                        if (People[i].VirusStrength > 0)
                         {
-                            if (getRealRandomByPersent(Settings.percentToStayVirusAfterDie))
+                            if (GetRealRandomByPersent(_config.ChanceToCreateVirusOnDeath))
                             {
-                                if ((getTypeByCoord(people[i].X, people[i].Y) != 4)&& (getTypeByCoord(people[i].X, people[i].Y) != 6))
+                                if ((GetTypeByCoord(People[i].X, People[i].Y) != 4) && (GetTypeByCoord(People[i].X, People[i].Y) != 6))
                                 {
-                                    addVirusByCoord(people[i].X, people[i].Y, Settings.virusCellRemoveAfterDie + 1);
+                                    AddVirusByCoord(People[i].X, People[i].Y, _config.MovesToVirusDeath + 1);
                                 }
-
                             }
-
-
                         }
-                        peopleToRemove.Add(people[i]);
-
+                        PeopleToRemove.Add(People[i]);
                     }
-                    if (people[i].Age > Settings.ageAfterOld)
+
+                    if (People[i].Age > _config.OldAge)
                     {
-                        int persentToDie =(int)((people[i].Age - Settings.ageAfterOld)*1.0 / (Settings.maxAge - Settings.ageAfterOld )*100);
-                        if (getRealRandomByPersent(persentToDie))
+                        int persentToDie = (int)((People[i].Age - _config.OldAge) * 1.0 / (_config.MaxAge - _config.OldAge) * 100);
+
+                        if (GetRealRandomByPersent(persentToDie))
                         {
-                            peopleToRemove.Add(people[i]);
+                            PeopleToRemove.Add(People[i]);
                         }
                     }
 
                 }
-                people[i].Age++;
 
-
-
-
+                People[i].Age++;
             }
-            if (peopleToRemove.Count > 0)
+
+            if (PeopleToRemove.Count > 0)
             {
-                for (int i = 0; i < peopleToRemove.Count; i++)
+                for (int i = 0; i < PeopleToRemove.Count; i++)
                 {
-                    if (peopleToRemove[i].AtHouse)
+                    if (PeopleToRemove[i].AtHouse)
                     {
-
-                        changeCurentCellForHouse(people[i].X, people[i].Y, -1);
+                        ChangeCurentCellForHouse(People[i].X, People[i].Y, -1);
                     }
-                    people.Remove(peopleToRemove[i]);
 
+                    People.Remove(PeopleToRemove[i]);
                 }
-                peopleToRemove.Clear();
+
+                PeopleToRemove.Clear();
             }
-            for (int i = 0; i < viruses.Count; i++)
+
+            for (int i = 0; i < Viruses.Count; i++)
             {
-                viruses[i].Health--;
-                if (viruses[i].Health == 0)
+                Viruses[i].Health--;
+
+                if (Viruses[i].Health == 0)
                 {
-                    virusesToRemove.Add(viruses[i]);
+                    VirusesToRemove.Add(Viruses[i]);
                 }
             }
-            if (virusesToRemove.Count > 0)
+
+            if (VirusesToRemove.Count > 0)
             {
-                for (int i = 0; i < virusesToRemove.Count; i++)
+                for (int i = 0; i < VirusesToRemove.Count; i++)
                 {
-                    viruses.Remove(virusesToRemove[i]);
+                    Viruses.Remove(VirusesToRemove[i]);
                 }
-                virusesToRemove.Clear();
+
+                VirusesToRemove.Clear();
             }
+
             int vaccineOnMap = 0;
             int foodOnMap = 0;
-            for(int i = 0; i < foods.Count; i++)
+
+            for (int i = 0; i < FoodItems.Count; i++)
             {
-                if (foods[i].Vaccine)
+                if (FoodItems[i].IsVaccine)
                 {
                     vaccineOnMap++;
                 }
@@ -848,31 +772,35 @@ namespace Life.Core.Models
                     foodOnMap++;
                 }
             }
-            if (Settings.maxFoodOnMap > foodOnMap)
+
+            if (_config.MaxFoodItemsOnMap > foodOnMap)
             {
-                if (getRealRandomByPersent(Settings.persentToGenerateFood))
+                if (GetRealRandomByPersent(_config.ChanceToGenerateFood))
                 {
-                    int xTemp=rnd.Next(0, xCount);
-                    int yTemp=rnd.Next(0, yCount);
-                    int foodAdd=rnd.Next(Settings.minFoodAdd, Settings.maxFoodAdd);
-                    int visualType = rnd.Next(0, Settings.visualFoodCount);
-                    if (getTypeByCoord(xTemp, yTemp) == 0)
+                    int xTemp = _random.Next(0, ColumnsCount);
+                    int yTemp = _random.Next(0, RowsCount);
+                    int foodAdd = _random.Next(_config.MinFoodIncrement, _config.MaxFoodIncrement);
+                    int visualType = _random.Next(0, AssetsSettings.FoodIconsCount);
+
+                    if (GetTypeByCoord(xTemp, yTemp) == 0)
                     {
-                        foods.Add(new Food(xTemp, yTemp, foodAdd, false, visualType));
+                        FoodItems.Add(new Food(xTemp, yTemp, foodAdd, false, visualType));
                     }
                 }
             }
-            if (Settings.maxVaccineOnMap > vaccineOnMap)
+
+            if (_config.MaxVaccineItemsOnField > vaccineOnMap)
             {
-                if (getRealRandomByPersent(Settings.persentToGenerateVaccine))
+                if (GetRealRandomByPersent(_config.ChanceToGenerateVaccine))
                 {
-                    int xTemp = rnd.Next(0, xCount);
-                    int yTemp = rnd.Next(0, yCount);
-                    int foodAdd = rnd.Next(Settings.minFoodAdd, Settings.maxFoodAdd);
-                    int visualType = rnd.Next(0, Settings.visualFoodCount);
-                    if (getTypeByCoord(xTemp, yTemp) == 0)
+                    int xTemp = _random.Next(0, ColumnsCount);
+                    int yTemp = _random.Next(0, RowsCount);
+                    int foodAdd = _random.Next(_config.MinFoodIncrement, _config.MaxFoodIncrement);
+                    int visualType = _random.Next(0, AssetsSettings.FoodIconsCount);
+
+                    if (GetTypeByCoord(xTemp, yTemp) == 0)
                     {
-                        foods.Add(new Food(xTemp, yTemp, foodAdd, true, visualType));
+                        FoodItems.Add(new Food(xTemp, yTemp, foodAdd, true, visualType));
                     }
                 }
             }

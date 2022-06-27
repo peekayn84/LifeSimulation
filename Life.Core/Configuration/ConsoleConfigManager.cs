@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Life.Core.Configuration
 {
@@ -13,7 +14,7 @@ namespace Life.Core.Configuration
         private readonly Dictionary<string, int> _parsedArgs;
         private readonly PropertyInfo[] _configProps;
 
-        public Config Configuration { get; private set; } = new Config();
+        public Config? Configuration { get; private set; } = new Config();
 
         public ConsoleConfigManager(string[] args)
         {
@@ -46,7 +47,7 @@ namespace Life.Core.Configuration
         private static bool IsValidKeyValuePair(string[] pair) =>
             pair.Length == 2 && int.TryParse(pair[1], out int value);
 
-        public async Task<Config> LoadConfig()
+        public Task<Config?> LoadConfig()
         {
             var config = new Config();
             foreach(var (key, value) in _parsedArgs)
@@ -60,7 +61,7 @@ namespace Life.Core.Configuration
 
             Configuration = config;
 
-            return Configuration;
+            return Task.FromResult<Config?>(config);
         }
     }
 }
