@@ -34,5 +34,10 @@ namespace Life.Core.Configuration
         ///  Cell size in pixels
         ///</summary>
         public const int CellSizePX = 100;
+
+        ///<summary>
+        /// JSON settings file name
+        ///</summary>
+        public const string JSONSettingsFilename = "settings.json";
     }
 }

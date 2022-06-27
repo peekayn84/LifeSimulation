@@ -1,4 +1,3 @@
-using System.IO;
 using System.Text.Json;
 
 namespace Life.Core.Configuration
@@ -15,7 +14,13 @@ namespace Life.Core.Configuration
         }
 
         public async Task<Config?> LoadConfig() {
-            using var fs = new FileStream(_filename, FileMode.OpenOrCreate, FileAccess.Read, FileShare.Read);
+            if(!File.Exists(_filename)) {
+                using var newFileFs = File.Create(_filename);
+                JsonSerializer.Serialize(newFileFs, Configuration);
+                return Configuration;
+            }
+
+            using var fs = new FileStream(_filename, FileMode.Open, FileAccess.Read, FileShare.Read);
 
             Configuration = await JsonSerializer.DeserializeAsync<Config>(fs);
 

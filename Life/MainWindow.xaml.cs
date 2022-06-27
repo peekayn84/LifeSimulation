@@ -1,20 +1,11 @@
-﻿using System;
-using System.Diagnostics;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using Life.Core.Abstractions;
+using Life.Core.Configuration;
+using Life.Core.Models;
+using System;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Windows.Threading;
 
 namespace Life
@@ -24,18 +15,30 @@ namespace Life
     /// </summary>
     public partial class MainWindow : Window
     {
-        Colony colony;
-        Image image;
-        GridLength sizeGridHeight;
-        DispatcherTimer timer;
-        int addGhraph = 0;
-        Graph graph;
+        private readonly IConfigManager<Config> _configManager;
+        private readonly Config? _config;
 
+        private Colony? colony;
+        private Image? image;
+        private Graph? graph;
 
+        private readonly GridLength sizeGridHeight;
+        private readonly DispatcherTimer timer;
+
+        private int addGhraph = 0;
 
         public MainWindow()
         {
             InitializeComponent();
+
+            _configManager = new JSONConfigManager(AssetsSettings.JSONSettingsFilename);
+            _config = _configManager.LoadConfig().GetAwaiter().GetResult();
+
+            if (_config == null)
+            {
+                throw new Exception("Unable to load config.");
+            }
+
             startButton.Click += StartButton_Click;
             stopButton.Click += StopButton_Click;
             xTextBox.TextChanged += XTextBox_TextChanged;
@@ -66,10 +69,9 @@ namespace Life
 
         private void StartButton_Click(object sender, RoutedEventArgs e)
         {
-
-            graph.addAlive(colony.countType(1));
-            graph.addInfected(colony.countType(7) + colony.countType(5));
-            graph.addFood(colony.countType(2));
+            graph.AddAlive(colony.CountType(1));
+            graph.AddInfected(colony.CountType(7) + colony.CountType(5));
+            graph.AddFood(colony.CountType(2));
 
             loadAdditionalSettings();
             timer.Start();
@@ -105,51 +107,50 @@ namespace Life
         public void loadAdditionalSettings()
         {
 
-            /*Settings.minNeighborToGenerateLive = tryConvet(minNeighborToGenerateLiveTextBox.Text);
-            Settings.maxNeighborToGenerateLive = tryConvet(maxNeighborToGenerateLiveTextBox.Text);
-            Settings.minNeighborToContinueLive = tryConvet(minNeighborToContinueLiveTextBox.Text);
-            Settings.maxNeighborToContinueLive = tryConvet(maxNeighborToContinueLiveTextBox.Text);
-            Settings.persentToGenerateNewLife = tryConvet(persentToGenerateNewLifeTextBox.Text);
-            Settings.persentToContinueLife = tryConvet(persentToContinueLifeTextBox.Text);
-            Settings.persentToInfectedFromAir = tryConvet(persentToInfectedFromAirTextBox.Text);
-            Settings.persentToInfectedNeighbor = tryConvet(persentToInfectedNeighborTextBox.Text);
-            Settings.persentToInfectedDie = tryConvet(persentToInfectedDieTextBox.Text);
-            Settings.persentToInfectedAlive = tryConvet(persentToInfectedAliveTextBox.Text);
+            /*Settings.minNeighborToGenerateLive = TryConvert(minNeighborToGenerateLiveTextBox.Text);
+            Settings.maxNeighborToGenerateLive = TryConvert(maxNeighborToGenerateLiveTextBox.Text);
+            Settings.minNeighborToContinueLive = TryConvert(minNeighborToContinueLiveTextBox.Text);
+            Settings.maxNeighborToContinueLive = TryConvert(maxNeighborToContinueLiveTextBox.Text);
+            Settings.persentToGenerateNewLife = TryConvert(persentToGenerateNewLifeTextBox.Text);
+            Settings.persentToContinueLife = TryConvert(persentToContinueLifeTextBox.Text);
+            Settings.persentToInfectedFromAir = TryConvert(persentToInfectedFromAirTextBox.Text);
+            Settings.persentToInfectedNeighbor = TryConvert(persentToInfectedNeighborTextBox.Text);
+            Settings.persentToInfectedDie = TryConvert(persentToInfectedDieTextBox.Text);
+            Settings.persentToInfectedAlive = TryConvert(persentToInfectedAliveTextBox.Text);
 
-            Settings.move = tryConvet(moveTextBox.Text);
+            Settings.move = TryConvert(moveTextBox.Text);
             Settings.wolfChild = (bool)wolfChildCheckBox.IsChecked;
-            Settings.wolfHealth = tryConvet(wolfHealthTextBox.Text);
-            Settings.wolfTeenager = tryConvet(wolfTeenagerTextBox.Text);
-            Settings.wolfTeenagerPersent = tryConvet(wolfTeenagerPersentTextBox.Text);
-            Settings.rabbitHealth = tryConvet(rabbitHealthTextBox.Text);
-            Settings.rabbitTeenager = tryConvet(rabbitTeenagerTextBox.Text);
-            Settings.rabbitTeenagerPersent = tryConvet(rabbitTeenagerPersentTextBox.Text);*/
+            Settings.wolfHealth = TryConvert(wolfHealthTextBox.Text);
+            Settings.wolfTeenager = TryConvert(wolfTeenagerTextBox.Text);
+            Settings.wolfTeenagerPersent = TryConvert(wolfTeenagerPersentTextBox.Text);
+            Settings.rabbitHealth = TryConvert(rabbitHealthTextBox.Text);
+            Settings.rabbitTeenager = TryConvert(rabbitTeenagerTextBox.Text);
+            Settings.rabbitTeenagerPersent = TryConvert(rabbitTeenagerPersentTextBox.Text);*/
         }
         public void updateSettings()
         {
-            image = null;
-            colony = null;
             loadAdditionalSettings();
             graph = new Graph();
-             colony = new Colony(Settings.xCount, Settings.yCount);
-            image = new Image(colony.xCount * Settings.sizeCell, colony.yCount * Settings.sizeCell);
-            image.generatePreview();
-            mainImage.Source = image.curentImageSourse;
-
+            colony = new Colony(_config.ColumnsCount, _config.RowsCount, _configManager);
+            image = new Image(_config.ColumnsCount * AssetsSettings.CellSizePX, colony.RowsCount * AssetsSettings.CellSizePX, _config);
+            image.GeneratePreview();
+            mainImage.Source = image.CurrentImageSource;
         }
+
         private void SizeTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            Settings.sizeCell = tryConvet(sizeTextBox.Text);
-            updateSettings();
+            // Cell size px - константа, нужно чото придумать
+            // AssetsSettings.CellSizePX = TryConvert(sizeTextBox.Text);
+            // updateSettings();
         }
 
         private void YTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            Settings.yCount = tryConvet(yTextBox.Text);
+            _config.RowsCount = TryConvert(yTextBox.Text);
             updateSettings();
         }
 
-        public int tryConvet(string text)
+        public int TryConvert(string text)
         {
             try
             {
@@ -159,59 +160,62 @@ namespace Life
                     tempInt = 1;
                 }
                 return tempInt;
-            }catch(Exception ex)
+            }
+            catch
             {
                 return 10;
             }
         }
+
         private void XTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            
-            Settings.xCount = tryConvet(xTextBox.Text);
+
+            _config.ColumnsCount = TryConvert(xTextBox.Text);
             updateSettings();
         }
 
         private void DebugButton_Click(object sender, RoutedEventArgs e)
         {
-            colony.updateColony();
+            colony.UpdateColony();
 
-            image.generateImage(colony);
-            mainImage.Source = image.curentImageSourse;
+            image.GenerateImage(colony);
+            mainImage.Source = image.CurrentImageSource;
         }
-        private void timer_Tick(object sender, EventArgs e)
+
+        private void timer_Tick(object? sender, EventArgs e)
         {
             if (addGhraph == 2)
             {
                 addGhraph = 0;
-                graph.addAlive(colony.countType(1));
-                graph.addInfected(colony.countType(7) + colony.countType(5));
-                graph.addFood(colony.countType(2));
-                graphImage.Source = graph.generateImage();
+                graph.AddAlive(colony.CountType(1));
+                graph.AddInfected(colony.CountType(7) + colony.CountType(5));
+                graph.AddFood(colony.CountType(2));
+                graphImage.Source = graph.GenerateImage();
             }
             else
             {
                 addGhraph++;
             }
 
-            
-            colony.updateColony();
 
-            image.generateImage(colony);
-            mainImage.Source = image.curentImageSourse;
+            colony.UpdateColony();
+
+            image.GenerateImage(colony);
+            mainImage.Source = image.CurrentImageSource;
         }
 
         /*public void iterLive()
         {
             Thread.Sleep(500);
-            colony.updateColony();
-            image.generateImage(colony);
+            colony.UpdateColony();
+            image.GenerateImage(colony);
             Dispatcher.Invoke(new Action(() =>
             {
                 lock (bitmapConveter)
                 {
                     mainImage.Source = bitmapConveter;
                 }
-                
+
             }));
             mainImage.Dispatcher.Invoke(new Action(() =>
             {
@@ -223,7 +227,7 @@ namespace Life
             this.Dispatcher.BeginInvoke(new Action(() =>
             {
 
-                
+
                 mainImage.Source = tmp;
 
             }));
@@ -232,34 +236,44 @@ namespace Life
         private void MainImage_MouseDown(object sender, MouseButtonEventArgs e)
         {
             var clickedPoint = e.GetPosition((IInputElement)sender);
-            int x = Convert.ToInt32(Math.Truncate(clickedPoint.X / (mainImage.RenderSize.Width / Settings.xCount)));
-            int y = Convert.ToInt32(Math.Truncate(clickedPoint.Y / (mainImage.RenderSize.Height / Settings.yCount)));
-            int index = -1;
-            int typeCell = colony.getTypeByCoord(x, y);
+            int x = Convert.ToInt32(Math.Truncate(clickedPoint.X / (mainImage.RenderSize.Width / _config.ColumnsCount)));
+            int y = Convert.ToInt32(Math.Truncate(clickedPoint.Y / (mainImage.RenderSize.Height / _config.RowsCount)));
+
+            int typeCell = colony.GetTypeByCoord(x, y);
             if (typeCell == 0)
             {
-                colony.addPeopleByCoord(x, y);
-            }else if ((typeCell == 1)|| (typeCell == 5)){
-                colony.removePersonByCoord(x, y);
-                colony.addFoodByCoord(x, y, false);
-
-            }else if (typeCell == 2){
-                colony.removeFoodByCoord(x, y);
-                colony.addFoodByCoord(x, y, true);
-
-            }else if (typeCell == 3){
-                colony.removeFoodByCoord(x, y);
-                colony.addHouseByCoord(x, y);
-
-            }else if (typeCell == 4){
-                colony.removeHouseByCoord(x, y);
-                colony.addVirusByCoord(x, y, Settings.virusCellRemoveAfterDie);
-            }else if (typeCell == 8){
-                colony.removeVirusByCoord(x, y);
+                colony.AddPeopleByCoord(x, y);
+            }
+            else if ((typeCell == 1) || (typeCell == 5))
+            {
+                colony.RemovePersonByCoord(x, y);
+                colony.AddFoodByCoord(x, y, false);
 
             }
-            image.generateImage(colony);
-            mainImage.Source = image.curentImageSourse;
+            else if (typeCell == 2)
+            {
+                colony.RemoveFoodByCoord(x, y);
+                colony.AddFoodByCoord(x, y, true);
+
+            }
+            else if (typeCell == 3)
+            {
+                colony.RemoveFoodByCoord(x, y);
+                colony.AddHouseByCoord(x, y);
+
+            }
+            else if (typeCell == 4)
+            {
+                colony.RemoveHouseByCoord(x, y);
+                colony.AddVirusByCoord(x, y, _config.MovesToVirusDeath);
+            }
+            else if (typeCell == 8)
+            {
+                colony.RemoveVirusByCoord(x, y);
+
+            }
+            image.GenerateImage(colony);
+            mainImage.Source = image.CurrentImageSource;
             //int y = Convert.ToInt32(Math.Truncate(clickedPoint.X / (mainImage.Width/ Settings.xCount)));
             //MessageBox.Show(x.ToString());
         }
@@ -268,7 +282,6 @@ namespace Life
 
         private void mainImage_MouseDown_1(object sender, MouseButtonEventArgs e)
         {
-            
             //MessageBox.Show("qq");
         }
     }

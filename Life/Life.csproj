@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="ART\" />
+    <Folder Include="Assets\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,6 +29,10 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Life.Core\Life.Core.csproj" />
   </ItemGroup>
 
 </Project>
