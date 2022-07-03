@@ -47,7 +47,7 @@ namespace Life.Core.Configuration
         private static bool IsValidKeyValuePair(string[] pair) =>
             pair.Length == 2 && int.TryParse(pair[1], out int value);
 
-        public Task<Config?> LoadConfig()
+        public Config? LoadConfig()
         {
             var config = new Config();
             foreach(var (key, value) in _parsedArgs)
@@ -61,7 +61,7 @@ namespace Life.Core.Configuration
 
             Configuration = config;
 
-            return Task.FromResult<Config?>(config);
+            return config;
         }
     }
 }

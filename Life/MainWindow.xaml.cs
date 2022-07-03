@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+using ScottPlot.Plottable;
 
 namespace Life
 {
@@ -26,13 +27,20 @@ namespace Life
         private readonly DispatcherTimer timer;
 
         private int addGhraph = 0;
+        private int updateLogic = 0;
+
+        double[] Healthy = new double[200];
+        double[] Infected = new double[200];
+        double[] Food = new double[200];
+
+        private Crosshair _crosshair;
 
         public MainWindow()
         {
             InitializeComponent();
 
-            _configManager = new JSONConfigManager(AssetsSettings.JSONSettingsFilename);
-            _config = _configManager.LoadConfig().GetAwaiter().GetResult();
+            _configManager = new JSONConfigManager("config.json");
+            _config = _configManager.LoadConfig();
 
             if (_config == null)
             {
@@ -47,7 +55,7 @@ namespace Life
             debugButton.Click += DebugButton_Click;
             mainImage.MouseDown += MainImage_MouseDown;
             mainImage.Stretch = Stretch.Fill;
-            graphImage.Stretch = Stretch.Fill;
+            //graphImage.Stretch = Stretch.Fill;
             typeComboBox.Items.Add("1 - Standart");
             typeComboBox.Items.Add("2 - Infected");
             typeComboBox.Items.Add("3 - Wolf and rabbit");
@@ -56,14 +64,81 @@ namespace Life
             sizeGridHeight = grindTable.RowDefinitions[1].Height;
             timer = new DispatcherTimer();
             timer.Tick += new EventHandler(timer_Tick);
-            timer.Interval = new TimeSpan(0, 0, 0, 0, 500);
+            timer.Interval = new TimeSpan(0, 0, 0, 0, 100);
             updateSettings();
 
             //live = new Thread(new ThreadStart(iterLive));
+
+            timer.Tick += UpdateGraph;
+
+            timer.Interval = new TimeSpan(0, 0, 0, 0, 500);
+            wpfPlot1.Plot.AddSignal(Healthy, 1, System.Drawing.Color.Green, label: "Healthy").FillAboveAndBelow(System.Drawing.Color.Green, System.Drawing.Color.Green);
+            wpfPlot1.Plot.AddSignal(Infected, 1, System.Drawing.Color.Purple, label: "Infected").FillAboveAndBelow(System.Drawing.Color.Purple, System.Drawing.Color.Purple);
+            wpfPlot1.Plot.AddSignal(Food, 1, System.Drawing.Color.Blue, label: "Food").FillAboveAndBelow(System.Drawing.Color.Blue, System.Drawing.Color.Blue);
+
+            wpfPlot1.Plot.SetAxisLimits(yMax: 20);
+            wpfPlot1.Plot.XAxis.Label("Time ->");
+            wpfPlot1.MouseMove += FormsPlot_MouseMove;
+
+            wpfPlot1.Refresh();
+
+            wpfPlot1.Plot.Legend(location: ScottPlot.Alignment.UpperLeft);
+        }
+
+        private void FormsPlot_MouseMove(object sender, MouseEventArgs e)
+        {
+            wpfPlot1.Plot.Remove(_crosshair);
+            (double x, double y) = wpfPlot1.GetMouseCoordinates();
+            _crosshair = wpfPlot1.Plot.AddCrosshair(x, y);
+            wpfPlot1.Render();
+        }
+
+        void UpdateGraph(object sender, EventArgs e)
+        {
+            if (cbHealthy.IsChecked == true)
+            {
+                Array.Copy(Healthy, 1, Healthy, 0, Healthy.Length - 1);
+                double nextValue1 = Convert.ToDouble(colony.CountType(1));
+                Healthy[Healthy.Length - 1] = nextValue1;
+            }
+            else
+            {
+                Array.Copy(Healthy, 1, Healthy, 0, Healthy.Length - 1);
+                Healthy[Healthy.Length - 1] = 0;
+            }
+
+            if (cbInfected.IsChecked == true)
+            {
+                Array.Copy(Infected, 1, Infected, 0, Infected.Length - 1);
+                double nextValue2 = Convert.ToDouble(colony.CountType(7) + colony.CountType(5));
+                Infected[Infected.Length - 1] = nextValue2;
+            }
+            else
+            {
+                Array.Copy(Infected, 1, Infected, 0, Infected.Length - 1);
+                Infected[Healthy.Length - 1] = 0;
+            }
+
+            if (cbFood.IsChecked == true)
+            {
+                Array.Copy(Food, 1, Food, 0, Food.Length - 1);
+                double nextValue3 = Convert.ToDouble(colony.CountType(2));
+                Food[Food.Length - 1] = nextValue3;
+            }
+            else
+            {
+                Array.Copy(Food, 1, Food, 0, Food.Length - 1);
+                Food[Healthy.Length - 1] = 0;
+            }
+
+
+
+            wpfPlot1.Refresh();
         }
 
         private void StopButton_Click(object sender, RoutedEventArgs e)
         {
+            timer.Stop();
             timer.Stop();
         }
 
@@ -73,7 +148,7 @@ namespace Life
             graph.AddInfected(colony.CountType(7) + colony.CountType(5));
             graph.AddFood(colony.CountType(2));
 
-            loadAdditionalSettings();
+            timer.Start();
             timer.Start();
         }
 
@@ -104,32 +179,9 @@ namespace Life
                 grindTable.RowDefinitions[2].Height = new GridLength(0);
             }*/
         }
-        public void loadAdditionalSettings()
-        {
 
-            /*Settings.minNeighborToGenerateLive = TryConvert(minNeighborToGenerateLiveTextBox.Text);
-            Settings.maxNeighborToGenerateLive = TryConvert(maxNeighborToGenerateLiveTextBox.Text);
-            Settings.minNeighborToContinueLive = TryConvert(minNeighborToContinueLiveTextBox.Text);
-            Settings.maxNeighborToContinueLive = TryConvert(maxNeighborToContinueLiveTextBox.Text);
-            Settings.persentToGenerateNewLife = TryConvert(persentToGenerateNewLifeTextBox.Text);
-            Settings.persentToContinueLife = TryConvert(persentToContinueLifeTextBox.Text);
-            Settings.persentToInfectedFromAir = TryConvert(persentToInfectedFromAirTextBox.Text);
-            Settings.persentToInfectedNeighbor = TryConvert(persentToInfectedNeighborTextBox.Text);
-            Settings.persentToInfectedDie = TryConvert(persentToInfectedDieTextBox.Text);
-            Settings.persentToInfectedAlive = TryConvert(persentToInfectedAliveTextBox.Text);
-
-            Settings.move = TryConvert(moveTextBox.Text);
-            Settings.wolfChild = (bool)wolfChildCheckBox.IsChecked;
-            Settings.wolfHealth = TryConvert(wolfHealthTextBox.Text);
-            Settings.wolfTeenager = TryConvert(wolfTeenagerTextBox.Text);
-            Settings.wolfTeenagerPersent = TryConvert(wolfTeenagerPersentTextBox.Text);
-            Settings.rabbitHealth = TryConvert(rabbitHealthTextBox.Text);
-            Settings.rabbitTeenager = TryConvert(rabbitTeenagerTextBox.Text);
-            Settings.rabbitTeenagerPersent = TryConvert(rabbitTeenagerPersentTextBox.Text);*/
-        }
         public void updateSettings()
         {
-            loadAdditionalSettings();
             graph = new Graph();
             colony = new Colony(_config.ColumnsCount, _config.RowsCount, _configManager);
             image = new Image(_config.ColumnsCount * AssetsSettings.CellSizePX, colony.RowsCount * AssetsSettings.CellSizePX, _config);
@@ -184,24 +236,35 @@ namespace Life
 
         private void timer_Tick(object? sender, EventArgs e)
         {
-            if (addGhraph == 2)
+            if (updateLogic == 5)
             {
-                addGhraph = 0;
-                graph.AddAlive(colony.CountType(1));
-                graph.AddInfected(colony.CountType(7) + colony.CountType(5));
-                graph.AddFood(colony.CountType(2));
-                graphImage.Source = graph.GenerateImage();
+                updateLogic = 0;
+                if (addGhraph == 2)
+                {
+                    addGhraph = 0;
+                    graph.AddAlive(colony.CountType(1));
+                    graph.AddInfected(colony.CountType(7) + colony.CountType(5));
+                    graph.AddFood(colony.CountType(2));
+                    //graphImage.Source = graph.GenerateImage();
+                }
+                else
+                {
+                    addGhraph++;
+                }
+
+                image.GenerateImage(colony, 100);
+                mainImage.Source = image.CurrentImageSource;
+                colony.UpdateColony();
+
+
             }
             else
             {
-                addGhraph++;
+                image.GenerateImage(colony, updateLogic*20);
+                mainImage.Source = image.CurrentImageSource;
+                updateLogic++;
             }
 
-
-            colony.UpdateColony();
-
-            image.GenerateImage(colony);
-            mainImage.Source = image.CurrentImageSource;
         }
 
         /*public void iterLive()
@@ -283,6 +346,11 @@ namespace Life
         private void mainImage_MouseDown_1(object sender, MouseButtonEventArgs e)
         {
             //MessageBox.Show("qq");
+        }
+
+        private void wpfPlot1_Loaded(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

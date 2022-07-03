@@ -254,7 +254,7 @@ namespace Life.Core.Models
             {
                 visualType = _random.Next(0, AssetsSettings.FoodIconsCount);
             }
-            int tempFoodAdd = _random.Next(_config.MinFoodIncrement, _config.MaxFoodIncrement + 1);
+            int tempFoodAdd = _random.Next(_config.MinFoodIncrement, _config.MaxFoodIncrement + 1);           
             FoodItems.Add(new Food(x, y, tempFoodAdd, vaccine, visualType));
         }
 
@@ -425,13 +425,15 @@ namespace Life.Core.Models
 
             for (int i = 0; i < People.Count(); i++)
             {
+                People[i].PrevX = -1;
+                People[i].PrevY = -1;
                 if (People[i].Age > _config.AdultAge)
                 {
                     if (People[i].AtHouse)
                     {
                         int persentToGoToFood = (int)(100 - (People[i].Saturation * 1.0 / _config.PersonDefaultSaturation * 100));
 
-                        //Debug.WriteLine(persentToGoToFood);
+                        
                         if (GetRealRandomByPersent(persentToGoToFood))
                         {
                             int xHouse = People[i].X;
@@ -796,7 +798,7 @@ namespace Life.Core.Models
                     int xTemp = _random.Next(0, ColumnsCount);
                     int yTemp = _random.Next(0, RowsCount);
                     int foodAdd = _random.Next(_config.MinFoodIncrement, _config.MaxFoodIncrement);
-                    int visualType = _random.Next(0, AssetsSettings.FoodIconsCount);
+                    int visualType = _random.Next(0, AssetsSettings.VaccineIconsCount);
 
                     if (GetTypeByCoord(xTemp, yTemp) == 0)
                     {

@@ -51,7 +51,7 @@ namespace Life.Core.Configuration {
         /// The age when a new person becomes adult.
         /// Default = 16
         ///</summary>
-        public int AdultAge { get; set; } = 16;
+        public int AdultAge { get; set; } = 1;
         ///<summary>
         /// The age what which a person is considered to be old.
         /// Default = 80
