@@ -16,7 +16,7 @@ namespace Life.Core.Configuration
         ///<summary>
         /// Total food icons count in Assets/ folder
         ///</summary>
-        public const int FoodIconsCount = 1;
+        public const int FoodIconsCount = 10;
         ///<summary>
         /// Total vaccine icons count in Assets/ folder
         ///</summary>

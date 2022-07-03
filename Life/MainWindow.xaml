@@ -62,7 +62,14 @@
                     <TextBox x:Name="rabbitTeenagerPersentTextBox" Text="50" Grid.Column="4" Grid.Row="4" Grid.ColumnSpan="2" materialDesign:HintAssist.Hint="Persent to make new rabbit" Margin="10" Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
 
                 </Grid>
-                <Image x:Name="graphImage" Height="200" MouseDown="mainImage_MouseDown_1"/>
+                <!--<Image x:Name="graphImage" Height="200" MouseDown="mainImage_MouseDown_1"/>-->
+                <WpfPlot x:Name="wpfPlot1" Loaded="wpfPlot1_Loaded" Height="217" Width="450"/>
+                <!--<Label x:Name="lbHealthy" Content="Count Healthy:"></Label>
+                <Label x:Name="lbInfected" Content="Count Infected:"></Label>
+                <Label x:Name="lbDFood" Content="Count Food:"></Label>-->
+                <CheckBox x:Name="cbHealthy" Content="Healthy"></CheckBox>
+                <CheckBox x:Name="cbInfected" Content="Infected"></CheckBox>
+                <CheckBox x:Name="cbFood" Content="Food"></CheckBox>
                 <Button  x:Name="debugButton"  Content="One Step" Margin="0 10 0 0" Cursor="Hand" />
             </StackPanel>
             

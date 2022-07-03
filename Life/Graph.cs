@@ -94,7 +94,7 @@ namespace Life
                 int countPoint = max(countAlive.Count(), countInfected.Count());
                 countPoint = max(countPoint, countFood.Count());
                 int sizePart = Convert.ToInt32( widthBitmap*1.0 / (countPoint - 1));
-                Debug.WriteLine(countPoint);
+                //Debug.WriteLine("q:"+countPoint.ToString());
 
                 for (int i = 0; i < countPoint-1; i++)
                 {
