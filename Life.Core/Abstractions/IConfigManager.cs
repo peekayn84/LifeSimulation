@@ -15,6 +15,6 @@ namespace Life.Core.Abstractions
         /// Method that asynchronously reads configuration in specific format and returns
         /// specific configuration type
         ///</summary>
-        Task<TConfig?> LoadConfig();
+        TConfig? LoadConfig();
     }
 }

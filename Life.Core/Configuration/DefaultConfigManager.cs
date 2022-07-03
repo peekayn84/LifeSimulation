@@ -6,9 +6,9 @@
         public Config? Configuration { get; private set; } = new Config();
 
 
-        public Task<Config?> LoadConfig()
+        public Config? LoadConfig()
         {
-            return Task.FromResult(Configuration);
+            return Configuration;
         }
     }
 }

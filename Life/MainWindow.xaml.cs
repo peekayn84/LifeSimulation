@@ -39,8 +39,8 @@ namespace Life
         {
             InitializeComponent();
 
-            _configManager = new DefaultConfigManager();
-            _config = _configManager.LoadConfig().GetAwaiter().GetResult();
+            _configManager = new JSONConfigManager("config.json");
+            _config = _configManager.LoadConfig();
 
             if (_config == null)
             {
