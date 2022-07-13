@@ -78,6 +78,17 @@ namespace Life.Core.Models
             Viruses = new List<Virus>(other.Viruses);
         }
 
+        public int GetAvgAge()
+        {
+            int avgAge = 0;
+            foreach (Person person in People)
+            {
+                avgAge+=person.Age;
+            }
+            avgAge = Convert.ToInt32(avgAge * 1.0 / People.Count());
+            return avgAge;
+        }
+
         public void AddPerson(
             int x,
             int y,
@@ -126,7 +137,15 @@ namespace Life.Core.Models
             _ => throw new Exception($"Invalid type value: {type}")
         };
 
-        public void RandomlyAddPeople()
+        public void RandomlyAddHouse()
+        {
+            int x = _random.Next(0, ColumnsCount);
+            int y = _random.Next(0, RowsCount);
+
+            AddHouseByCoord(x, y);
+        }
+
+        public void RandomlyAddPerson()
         {
             int x = 0;
             int y = 0;
@@ -140,8 +159,7 @@ namespace Life.Core.Models
 
                 foreach (Food food in FoodItems)
                 {
-
-                    if ((food.X == x) && (food.Y == y))
+                    if (IsInTheCell(food, x, y))
                     {
                         find = true;
                         break;
@@ -150,8 +168,7 @@ namespace Life.Core.Models
 
                 foreach (House house in Houses)
                 {
-
-                    if ((house.X == x) && (house.Y == y))
+                    if (IsInTheCell(house, x, y))
                     {
                         find = true;
                         break;
@@ -174,7 +191,7 @@ namespace Life.Core.Models
                 visualType,
                 virusStrength: 0,
                 virusGoDown: false,
-                hasMask: false,
+                hasMask,
                 vaccineProtection: 0,
                 atHouse: false
             );
@@ -254,7 +271,7 @@ namespace Life.Core.Models
             {
                 visualType = _random.Next(0, AssetsSettings.FoodIconsCount);
             }
-            int tempFoodAdd = _random.Next(_config.MinFoodIncrement, _config.MaxFoodIncrement + 1);           
+            int tempFoodAdd = _random.Next(_config.MinFoodIncrement, _config.MaxFoodIncrement + 1);
             FoodItems.Add(new Food(x, y, tempFoodAdd, vaccine, visualType));
         }
 
@@ -433,7 +450,7 @@ namespace Life.Core.Models
                     {
                         int persentToGoToFood = (int)(100 - (People[i].Saturation * 1.0 / _config.PersonDefaultSaturation * 100));
 
-                        
+
                         if (GetRealRandomByPersent(persentToGoToFood))
                         {
                             int xHouse = People[i].X;
