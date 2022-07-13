@@ -18,7 +18,8 @@ namespace Life.Core.Configuration
             _filename = filename;
         }
 
-        public Config? LoadConfig() {
+        public Config? LoadConfig() 
+        {
             if(!File.Exists(_filename)) 
             {
                 using var newFileFs = File.Create(_filename);
@@ -26,7 +27,11 @@ namespace Life.Core.Configuration
                 return Configuration;
             }
 
-            using var fs = new FileStream(_filename, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using var fs = new FileStream(
+                _filename, 
+                FileMode.Open, 
+                FileAccess.Read, 
+                FileShare.Read);
 
             Configuration = JsonSerializer.Deserialize<Config>(fs);
 

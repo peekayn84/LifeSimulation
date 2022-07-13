@@ -126,7 +126,15 @@ namespace Life.Core.Models
             _ => throw new Exception($"Invalid type value: {type}")
         };
 
-        public void RandomlyAddPeople()
+        public void RandomlyAddHouse()
+        {
+            int x = _random.Next(0, ColumnsCount);
+            int y = _random.Next(0, RowsCount);
+
+            AddHouseByCoord(x, y);
+        }
+
+        public void RandomlyAddPerson()
         {
             int x = 0;
             int y = 0;
@@ -140,8 +148,7 @@ namespace Life.Core.Models
 
                 foreach (Food food in FoodItems)
                 {
-
-                    if ((food.X == x) && (food.Y == y))
+                    if (IsInTheCell(food, x, y))
                     {
                         find = true;
                         break;
@@ -150,8 +157,7 @@ namespace Life.Core.Models
 
                 foreach (House house in Houses)
                 {
-
-                    if ((house.X == x) && (house.Y == y))
+                    if (IsInTheCell(house, x, y))
                     {
                         find = true;
                         break;
@@ -174,7 +180,7 @@ namespace Life.Core.Models
                 visualType,
                 virusStrength: 0,
                 virusGoDown: false,
-                hasMask: false,
+                hasMask,
                 vaccineProtection: 0,
                 atHouse: false
             );
