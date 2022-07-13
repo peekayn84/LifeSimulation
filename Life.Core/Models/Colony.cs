@@ -78,6 +78,17 @@ namespace Life.Core.Models
             Viruses = new List<Virus>(other.Viruses);
         }
 
+        public int GetAvgAge()
+        {
+            int avgAge = 0;
+            foreach (Person person in People)
+            {
+                avgAge+=person.Age;
+            }
+            avgAge = Convert.ToInt32(avgAge * 1.0 / People.Count());
+            return avgAge;
+        }
+
         public void AddPerson(
             int x,
             int y,
@@ -260,7 +271,7 @@ namespace Life.Core.Models
             {
                 visualType = _random.Next(0, AssetsSettings.FoodIconsCount);
             }
-            int tempFoodAdd = _random.Next(_config.MinFoodIncrement, _config.MaxFoodIncrement + 1);           
+            int tempFoodAdd = _random.Next(_config.MinFoodIncrement, _config.MaxFoodIncrement + 1);
             FoodItems.Add(new Food(x, y, tempFoodAdd, vaccine, visualType));
         }
 
@@ -439,7 +450,7 @@ namespace Life.Core.Models
                     {
                         int persentToGoToFood = (int)(100 - (People[i].Saturation * 1.0 / _config.PersonDefaultSaturation * 100));
 
-                        
+
                         if (GetRealRandomByPersent(persentToGoToFood))
                         {
                             int xHouse = People[i].X;
